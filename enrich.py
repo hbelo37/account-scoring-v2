@@ -1,8 +1,13 @@
 import requests
 import re
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+API_KEY = os.getenv("SMARTE_API_KEY")
 
 SMARTE_ENRICH_URL = "https://api.smarte.pro/v7/enrich"
-API_KEY = "7aca4a79-f88f-44d4-bd63-d99bbe2d6bb7"
+
 
 def parse_rev_range(rev_range: str) -> float:
     """Convert revenue range string like '$100 - 250M' to a number (midpoint)."""
