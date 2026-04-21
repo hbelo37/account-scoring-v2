@@ -1,0 +1,92 @@
+[
+    {
+      "company": "Plaid",
+      "industry": "Fintech",
+      "size": 1200,
+      "revenue": 150000000,
+      "geo": "US",
+      "tech_stack": ["aws", "kubernetes", "snowflake", "salesforce"],
+      "funding_stage": "Series C"
+    },
+    {
+      "company": "Rippling",
+      "industry": "SaaS",
+      "size": 2500,
+      "revenue": 350000000,
+      "geo": "US",
+      "tech_stack": ["aws", "react", "salesforce", "hubspot"],
+      "funding_stage": "Series D"
+    },
+    {
+      "company": "Webflow",
+      "industry": "SaaS",
+      "size": 800,
+      "revenue": 120000000,
+      "geo": "US",
+      "tech_stack": ["aws", "vue", "hubspot"],
+      "funding_stage": "Series C"
+    },
+    {
+      "company": "Snyk",
+      "industry": "DevTools",
+      "size": 1000,
+      "revenue": 180000000,
+      "geo": "EU",
+      "tech_stack": ["aws", "kubernetes", "snowflake", "salesforce"],
+      "funding_stage": "Series C"
+    },
+    {
+      "company": "Airbyte",
+      "industry": "Data Infrastructure",
+      "size": 300,
+      "revenue": 25000000,
+      "geo": "US",
+      "tech_stack": ["gcp", "kubernetes", "snowflake"],
+      "funding_stage": "Series B"
+    },
+    {
+      "company": "PostHog",
+      "industry": "Analytics",
+      "size": 150,
+      "revenue": 15000000,
+      "geo": "EU",
+      "tech_stack": ["aws", "react"],
+      "funding_stage": "Series B"
+    },
+    {
+      "company": "Retool",
+      "industry": "DevTools",
+      "size": 400,
+      "revenue": 60000000,
+      "geo": "US",
+      "tech_stack": ["aws", "react", "salesforce"],
+      "funding_stage": "Series C"
+    },
+    {
+      "company": "OpenPhone",
+      "industry": "SaaS",
+      "size": 180,
+      "revenue": 20000000,
+      "geo": "US",
+      "tech_stack": ["gcp", "hubspot"],
+      "funding_stage": "Series B"
+    },
+    {
+      "company": "Tines",
+      "industry": "Security Automation",
+      "size": 350,
+      "revenue": 45000000,
+      "geo": "EU",
+      "tech_stack": ["aws", "kubernetes", "salesforce"],
+      "funding_stage": "Series B"
+    },
+    {
+      "company": "Scale AI",
+      "industry": "AI Infrastructure",
+      "size": 900,
+      "revenue": 200000000,
+      "geo": "US",
+      "tech_stack": ["gcp", "kubernetes", "snowflake", "salesforce"],
+      "funding_stage": "Series C"
+    }
+  ]
