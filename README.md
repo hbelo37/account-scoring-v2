@@ -117,7 +117,7 @@ pip install -r requirements.txt
 
 Create `.env`:
 
-SMARTE_API_KEY=your_key_here
+YOUR_ENRICHMENT_PROVIDER=your_key_here
 
 Run:
 
