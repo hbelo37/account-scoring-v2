@@ -1,18 +1,22 @@
 from fastapi import FastAPI
-from icp import train_icp
-from scoring import score
+from pydantic import BaseModel
+
+from enrich import enrich_company
+from scoring import score_account
 
 app = FastAPI()
 
-@app.get("/")
-def home():
-    return {"status": "ok"}
 
-@app.post("/train_icp")
-def train(data: dict):
-    train_icp(data["customers"])
-    return {"message": "trained"}
+class AccountRequest(BaseModel):
+    company: str
+
 
 @app.post("/score")
-def run_score(data: dict):
-    return score(data["account"])
+def score(req: AccountRequest):
+    account = enrich_company(req.company)
+    result = score_account(account)
+    return {
+        "input": req.company,
+        "enriched": account,
+        "result": result
+    }
