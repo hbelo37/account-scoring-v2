@@ -1,6 +1,6 @@
 from icp import get_icp
 
-def score_account(account: dict) -> dict:
+def score_account(account: dict, icp_data: list) -> dict:
     score = 0
 
     # Industry fit
