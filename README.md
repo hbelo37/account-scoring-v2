@@ -1,223 +1,160 @@
-# 🚀 Account Scoring Skill — Bring Your Own Enrichment API
+# 🚀 Account Scoring Skill (ICP-Driven)
 
-A portable, ICP-aware **Account Scoring Engine** that works with **any enrichment data provider**.
+A reusable GTM skill that lets any user:
 
-Use SMARTe, Crunchbase, ZoomInfo, LeadIQ, or your own internal API —  
-without changing the scoring system.
+1) Upload their existing customer dataset (ICP)
+2) Score any company against that ICP using enrichment and scoring logic
 
----
-
-## 🧠 Core Idea
-
-Most tools score accounts using static firmographic rules.
-
-This skill scores accounts based on:
-
-“How similar is this company to the ones who already pay us?”
-
-Your existing customers define the ICP.  
-Any new company is enriched using your chosen provider and scored against that ICP memory.
+This is designed to run as an API service and plug directly into tools like ChatGPT or Claude.
 
 ---
 
-## 🧱 Architecture
+## 🧠 What this skill really does
 
-User Input (company/domain)  
-→ enrich.py → Your Provider API  
-→ Standardized Firmographic Schema  
-→ scoring.py (ICP logic)  
-→ Score + Tier
+Most scoring tools hardcode rules.
 
----
+This skill does something smarter:
 
-## 📁 Project Structure
+You bring your customer data.
+The engine learns your ICP.
+Then it scores any company against it.
 
-- cli.py — User entry point
-- enrich.py — Chooses provider
-- provider_base.py — Provider interface
-- provider_smarte.py — Example provider
-- scoring.py — Scoring logic (isolated)
-- customers.json — Your ICP dataset
-- .env — API keys
-- requirements.txt
+This makes it a true reusable GTM Account Scoring Engine.
 
 ---
 
-## 🔌 Bring Your Own Provider
+## ⚙️ How it works
 
-Every provider only needs to return this standard schema:
+Step 1 — User uploads their customers once  
+Step 2 — User asks to score companies anytime after  
 
-{
-  "company": str,
-  "industry": str,
-  "size": int,
-  "revenue": float,
-  "geo": str,
-  "tech_stack": list,
-  "funding_stage": str | None
-}
-
-As long as this is returned, scoring works.
-
-To add a new provider:
-
-1. Create provider_xxx.py implementing enrich()
-2. Return the standardized schema
-3. Change one line in enrich.py to use that provider
-
-No scoring changes required.
+The system enriches the company, compares it with the uploaded ICP, and returns a score and tier.
 
 ---
 
-## 🧠 ICP Memory — customers.json
+## 📦 Project Structure
 
-This file defines your Ideal Customer Profile.
-
-Example:
-
-[
-  {
-    "company": "Acme SaaS",
-    "industry": "SaaS",
-    "size": 200,
-    "revenue": 5000000,
-    "geo": "US",
-    "tech_stack": ["aws", "salesforce"],
-    "funding_stage": "Series B"
-  }
-]
-
-The richer this file, the smarter the scoring.
+main.py → FastAPI app with endpoints  
+enrich.py → Company enrichment logic (Smarte, Crunchbase, ZoomInfo, etc.)  
+scoring.py → ICP comparison and py → Helper utilities if needed  
+cli.py → Local CLI testing  
+requirements.txt → Dependencies  
 
 ---
 
-## 🧮 How to Change the Scoring Logic (Very Important)
+## 🔌 API Endpoints
 
-All scoring lives in **scoring.py**.
+### POST /set-icp
 
-You can change scoring without touching:
-- providers
-- enrichment
-- CLI
-- future API wrappers
+Upload customer dataset.
 
-### Required function
+Body should contain a list named customers with firmographic data like company, industry, size, geo.
 
-def score_account(account: dict) -> dict:
-
-Input will look like:
-
-{
-  "company": "...",
-  "industry": "...",
-  "size": ...,
-  "revenue": ...,
-  "geo": "...",
-  "tech_stack": [...],
-  "funding_stage": ...
-}
-
-Output must be:
-
-{"score": int, "tier": "High Fit" | "Medium Fit" | "Low Fit"}
+Response: ICP stored successfully.
 
 ---
 
-### Example 1 — Rule Based Scoring
+### POST /score
 
-def score_account(account: dict) -> dict:
-    score = 0
+Score companies against the uploaded ICP.
 
-    if account["industry"] in ["SaaS", "Software", "Sales intelligence"]:
-        score += 40
+Body should contain a list named companies with company names or domains.
 
-    if 100 <= account["size"] <= 2000:
-        score += 30
-
-    if account["geo"] in ["United States", "US", "USA"]:
-        score += 20
-
-    if account.get("funding_stage") in ["Series A", "Series B"]:
-        score += 20
-
-    if score >= 70:
-        tier = "High Fit"
-    elif score >= 40:
-        tier = "Medium Fit"
-    else:
-        tier = "Low Fit"
-
-    return {"score": score, "tier": tier}
+Response: company name, score, tier, enriched firmographic data.
 
 ---
 
-### Example 2 — ICP Similarity Scoring (Recommended)
+## ▶️ Run locally
 
-import json
+Install dependencies:
 
-with open("customers.json") as f:
-    customers = json.load(f)
+pip install -r requirements.txt
 
-def score_account(account: dict) -> dict:
-    score = 0
+Run server:
 
-    industries = [c["industry"] for c in customers]
-    sizes = [c["size"] for c in customers]
-    geos = [c["geo"] for c in customers]
+uvicorn main:app --reload
 
-    if account["industry"] in industries:
-        score += 35
+Open:
 
-    if min(sizes) <= account["size"] <= max(sizes):
-        score += 30
+http://127.0.0.1:8000/docs
 
-    if account["geo"] in geos:
-        score += 20
-
-    if score >= 70:
-        tier = "High Fit"
-    elif score >= 40:
-        tier = "Medium Fit"
-    else:
-        tier = "Low Fit"
-
-    return {"score": score, "tier": tier}
+Test the endpoints from Swagger.
 
 ---
 
-## ▶️ Run Locally
+## ☁️ Deploy on Render
 
-python -m venv venv  
-source venv/bin/activate  
-pip install -r requirements.txt  
+Create a Web Service from this repo.
 
-Create .env with your API key.
+Build command:
+pip install -r requirements.txt
 
-Run:
+Start command:
+uvicorn main:app --host 0.0.0.0 --port 10000
 
-python cli.py
+Add environment variable:
 
----
+SMARTE_API_KEY with your enrichment key.
 
-## 🧩 Why This Is Powerful
-
-This is a GTM skill you can expose to:
-- ChatGPT tools
-- Claude tools
-- MCP servers
-- Internal workflows
-
-Because enrichment and scoring are fully decoupled.
+After deploy, open /docs to test.
 
 ---
 
-## License
+## 🧮 Himportant)
 
-MIT
-"""
-open("README.md","w").write(content)
-PY
+All scoring logic lives in scoring.py.
 
-git add README.md
-git commit -m "Full rewritten README"
-git push
+This function is the only thing that matters:
+
+score_account(account, icp_data)
+
+As long as this function:
+- takes enriched company data
+- takes ICP dataset
+- returns score and tier
+
+Everything else will continue working.
+
+---
+
+## ✏️ Changing scoring logic
+
+You can change scoring to:
+
+- Rule based weights
+- Industry match percentage
+- Size similarity
+- Geo similarity
+- Tech stack overlap
+- Funding stage similarity
+- Or full similarity algorithms
+
+Only edit scoring.py. Nothing else.
+
+---
+
+## 🔄 Changing enrichment provider
+
+All enrichment is isolated in enrich.py.
+
+You can swap Smarte with Crunchbase, ZoomInfo, Clearbit, Apollo, or any provider.
+
+As long as enrich_company returns a standard firmographic dictionary, scoring continues to work.
+
+---
+
+## 🤖 Using this as a Skill in ChatGPT or Claude
+
+Tool flow:
+
+1) Tool calls /set-icp with user customers
+2) Tool calls /score whenever user asks to score companies
+
+This makes the skill reusable for anyone## 🧩 Why this is powerful
+
+This is not a demo script.
+This is a real ICP scoring engine that adapts to whoever uses it.
+
+Bring your customers.
+Score your market.
+
