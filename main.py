@@ -3,6 +3,10 @@ from pydantic import BaseModel
 from typing import List, Dict
 from enrich import enrich_company
 from scoring import score_account
+import json
+import os
+
+ICP_FILE = "icp_store.json"
 
 app = FastAPI(title="Account Scoring Skill")
 
@@ -29,34 +33,45 @@ def health():
 
 @app.post("/set-icp")
 def set_icp(payload: ICPPayload):
-    global ICP_STORE
+    import json
+
+    ICP_FILE = "icp_store.json"
 
     if not payload.customers:
         raise HTTPException(status_code=400, detail="Customers list cannot be empty")
 
-    ICP_STORE = payload.customers
+    with open(ICP_FILE, "w") as f:
+        json.dump(payload.customers, f)
 
     return {
         "message": "ICP stored successfully",
-        "customers_loaded": len(ICP_STORE)
+        "customers_loaded": len(payload.customers)
     }
-
 
 @app.post("/score")
 def score_companies(payload: ScorePayload):
-    if not ICP_STORE:
+    import os
+    import json
+
+    ICP_FILE = "icp_store.json"
+
+    # Check if ICP exists
+    if not os.path.exists(ICP_FILE):
         raise HTTPException(
             status_code=400,
             detail="ICP not set. Call /set-icp first with customer data."
         )
+
+    # Load ICP from file
+    with open(ICP_FILE, "r") as f:
+        icp_data = json.load(f)
 
     results = []
 
     for company in payload.companies:
         enriched = enrich_company(company)
 
-        # scoring.py should use ICP_STORE internally
-        result = score_account(enriched, ICP_STORE)
+        result = score_account(enriched, icp_data)
 
         results.append({
             "company": company,
