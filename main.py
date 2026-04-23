@@ -1,58 +1,34 @@
-import json
-from fastapi import FastAPI, HTTPException
-from scoring import score_account
+from fastapi import FastAPI
+from pydantic import BaseModel
+from typing import List, Dict
 from enrich import enrich_company
+from scoring import score_account
 
 app = FastAPI()
 
-# In-memory ICP store (per server instance)
-ICP_STORE = None
+
+class CustomerExample(BaseModel):
+    industry: str
+    size: int
+    geo: str
+
+
+class ScorePayload(BaseModel):
+    companies: List[str]
+    customers: List[CustomerExample]
 
 
 @app.post("/score")
-def score_companies(payload: dict):
-    """
-    Payload formats supported:
-
-    First time user (sets ICP + scores):
-    {
-        "companies": ["stripe.com"],
-        "customers": [ ... ICP JSON ... ]
-    }
-
-    Next calls (only scoring):
-    {
-        "companies": ["notion.so"]
-    }
-    """
-
-    global ICP_STORE
-
-    companies = payload.get("companies")
-    customers = payload.get("customers")
-
-    # If customers provided → set ICP
-    if customers:
-        ICP_STORE = customers
-
-    # If no ICP ever set → error
-    if ICP_STORE is None:
-        raise HTTPException(
-            status_code=400,
-            detail="ICP not set. Provide 'customers' in this request."
-        )
-
-    if not companies:
-        raise HTTPException(
-            status_code=400,
-            detail="No companies provided to score."
-        )
-
+def score_companies(payload: ScorePayload):
     results = []
 
-    for company in companies:
+    for company in payload.companies:
         enriched = enrich_company(company)
-        result = score_account(enriched, ICP_STORE)
+
+        result = score_account(
+            enriched,
+            [c.dict() for c in payload.customers]
+        )
 
         results.append({
             "company": company,
