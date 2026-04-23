@@ -1,57 +1,36 @@
-const http = require("http");
+const express = require("express");
 const axios = require("axios");
 
-const PORT = 3000;
+const app = express();
+app.use(express.json());
 
-// 👉 CHANGE this to your Render URL if different
-const API_BASE = "https://account-scoring-v2.onrender.com";
+const API = "https://account-scoring-v2.onrender.com/score";
 
-const server = http.createServer(async (req, res) => {
-  if (req.method === "POST" && req.url === "/mcp") {
-    let body = "";
+app.post("/mcp", async (req, res) => {
+  try {
+    const { companies, customers } = req.body;
 
-    req.on("data", chunk => {
-      body += chunk.toString();
+    if (!customers || customers.length === 0) {
+      return res.status(400).json({
+        error: "Provide customer examples to define ICP."
+      });
+    }
+
+    const response = await axios.post(API, {
+      companies,
+      customers
     });
 
-    req.on("end", async () => {
-      try {
-        const mcpRequest = JSON.parse(body);
+    res.status(200).json(response.data);
 
-        // Expecting: { company: "stripe.com" }
-        const company = mcpRequest.company;
-
-        if (!company) {
-          res.writeHead(400);
-          return res.end(JSON.stringify({ error: "company field missing" }));
-        }
-
-        // Call your scoring API
-        const response = await axios.post(`${API_BASE}/score`, {
-          companies: [company]
-        });
-
-        const result = response.data.results[0];
-
-        res.writeHead(200, { "Content-Type": "application/json" });
-        reend(JSON.stringify({
-          score: result.score,
-          tier: result.tier,
-          enriched: result.enriched
-        }));
-
-      } catch (err) {
-        res.writeHead(500);
-        res.end(JSON.stringify({ error: err.message }));
-      }
+  } catch (e) {
+    res.status(500).json({
+      error: e.message,
+      details: e.response?.data
     });
-
-  } else {
-    res.writeHead(404);
-    res.end();
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`MCP server running on http://localhost:${PORT}/mcp`);
+app.listen(3000, () => {
+  console.log("MCP running on http://localhost:3000/mcp");
 });
