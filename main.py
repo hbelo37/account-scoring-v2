@@ -1,77 +1,58 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import List, Dict
-from enrich import enrich_company
-from scoring import score_account
 import json
-import os
+from fastapi import FastAPI, HTTPException
+from scoring import score_account
+from enrich import enrich_company
 
-ICP_FILE = "icp_store.json"
+app = FastAPI()
 
-app = FastAPI(title="Account Scoring Skill")
+# In-memory ICP store (per server instance)
+ICP_STORE = None
 
-# In-memory ICP store (per service instance)
-ICP_STORE: List[Dict] = []
-
-
-# ---------- Models ----------
-
-class ICPPayload(BaseModel):
-    customers: List[Dict]
-
-
-class ScorePayload(BaseModel):
-    companies: List[str]  # names or domains
-
-
-# ---------- Routes ----------
-
-@app.get("/")
-def health():
-    return {"status": "Account Scoring Skill running"}
-
-
-@app.post("/set-icp")
-def set_icp(payload: ICPPayload):
-    import json
-
-    ICP_FILE = "icp_store.json"
-
-    if not payload.customers:
-        raise HTTPException(status_code=400, detail="Customers list cannot be empty")
-
-    with open(ICP_FILE, "w") as f:
-        json.dump(payload.customers, f)
-
-    return {
-        "message": "ICP stored successfully",
-        "customers_loaded": len(payload.customers)
-    }
 
 @app.post("/score")
-def score_companies(payload: ScorePayload):
-    import os
-    import json
+def score_companies(payload: dict):
+    """
+    Payload formats supported:
 
-    ICP_FILE = "icp_store.json"
+    First time user (sets ICP + scores):
+    {
+        "companies": ["stripe.com"],
+        "customers": [ ... ICP JSON ... ]
+    }
 
-    # Check if ICP exists
-    if not os.path.exists(ICP_FILE):
+    Next calls (only scoring):
+    {
+        "companies": ["notion.so"]
+    }
+    """
+
+    global ICP_STORE
+
+    companies = payload.get("companies")
+    customers = payload.get("customers")
+
+    # If customers provided → set ICP
+    if customers:
+        ICP_STORE = customers
+
+    # If no ICP ever set → error
+    if ICP_STORE is None:
         raise HTTPException(
             status_code=400,
-            detail="ICP not set. Call /set-icp first with customer data."
+            detail="ICP not set. Provide 'customers' in this request."
         )
 
-    # Load ICP from file
-    with open(ICP_FILE, "r") as f:
-        icp_data = json.load(f)
+    if not companies:
+        raise HTTPException(
+            status_code=400,
+            detail="No companies provided to score."
+        )
 
     results = []
 
-    for company in payload.companies:
+    for company in companies:
         enriched = enrich_company(company)
-
-        result = score_account(enriched, icp_data)
+        result = score_account(enriched, ICP_STORE)
 
         results.append({
             "company": company,
