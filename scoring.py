@@ -1,25 +1,40 @@
-from icp import get_icp
+from collections import Counter
+import statistics
 
-def score_account(account: dict, icp_data: list) -> dict:
+
+def build_icp_profile(customers):
+    industries = [c["industry"] for c in customers]
+    geos = [c["geo"] for c in customers]
+    sizes = [c["size"] for c in customers]
+
+    return {
+        "top_industries": Counter(industries),
+        "top_geos": Counter(geos),
+        "avg_size": statistics.mean(sizes),
+    }
+
+
+def score_account(enriched, customers):
+    icp = build_icp_profile(customers)
+
     score = 0
 
-    # Industry fit
-    if account["industry"] in ["SaaS", "Sales intelligence", "Software"]:
-        score += 30
+    # Industry similarity (0-40)
+    if enriched["industry"] in icp["top_industries"]:
+        freq = icp["top_industries"][enriched["industry"]]
+        score += min(40, freq * 10)
 
-    # Company size
-    if 50 <= account["size"] <= 1000:
-        score += 25
+    # Geo similarity (0-20)
+    if enriched["geo"] in icp["top_geos"]:
+        freq = icp["top_geos"][enriched["geo"]]
+        score += min(20, freq * 5)
 
-    # Geo fit
-    if account["geo"] in ["United States", "US", "USA"]:
-        score += 15
+    # Size similarity (0-40)
+    size_diff = abs(enriched["size"] - icp["avg_size"])
+    size_score = max(0, 40 - (size_diff / icp["avg_size"]) * 40)
+    score += size_score
 
-    # Basic revenue logic (optional)
-    if account.get("revenue", 0) > 1_000_000:
-        score += 10
-
-    # Simple tiering
+    # Tiering
     if score >= 70:
         tier = "High Fit"
     elif score >= 40:
@@ -27,4 +42,7 @@ def score_account(account: dict, icp_data: list) -> dict:
     else:
         tier = "Low Fit"
 
-    return {"score": score, "tier": tier}
+    return {
+        "score": round(score),
+        "tier": tier
+    }
