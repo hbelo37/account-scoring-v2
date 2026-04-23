@@ -1,0 +1,6 @@
+{
+    "name": "account-scoring",
+    "description": "Dynamic ICP-based account scoring",
+    "endpoint": "https://account-scoring-v2-1.onrender.com/mcp",
+    "method": "POST"
+  }
